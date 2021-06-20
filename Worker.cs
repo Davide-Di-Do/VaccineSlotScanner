@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -25,6 +23,9 @@ namespace vaccine_slot_scanner
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            if (stoppingToken.IsCancellationRequested) {
+                _logger.LogInformation("Cancelled");
+            }
             while (!stoppingToken.IsCancellationRequested)
             {
                 _logger.LogInformation("Running request to agenda at: {time}", DateTimeOffset.Now);
@@ -54,7 +55,7 @@ namespace vaccine_slot_scanner
                     _logger.LogWarning("Wow I've found some free slot! Sending an email to warn");
                     // send email
                 }
-
+                _logger.LogInformation($"Sending email to {Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT")}");
                 await _mailgunClient.SendEmail(
                     new MailgunRequest()
                     {
