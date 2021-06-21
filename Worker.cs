@@ -34,8 +34,8 @@ namespace vaccine_slot_scanner
                 _logger.LogInformation("Running request to agenda at: {time}", DateTimeOffset.Now);
                 var agendaResponse = await _agendaClient.GetAgendaSlots(
                     DateTime.UtcNow.ToString("yyyy-MM-dd"),
-                    "2820336",
-                    "466606",
+                    "2864680",
+                    "476384",
                     "public",
                     "25230",
                     "400"
@@ -44,11 +44,11 @@ namespace vaccine_slot_scanner
                 {
                     agendaResponse = await _agendaClient.GetAgendaSlots(
                         agendaResponse.NextSlot,
-                        "2820336",
-                        "466606",
+                        "2864680",
+                        "476384",
                         "public",
                         "25230",
-                        "4"
+                        "400"
                     );
                 }
                 if (agendaResponse.Total != 0)
