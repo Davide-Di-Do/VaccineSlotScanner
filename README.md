@@ -7,7 +7,7 @@ Open terminal in the folder where you've downloaded the package reported in the 
 The application needs some environment variables to run properly:
 * NOTIFICATION_RECIPIENT: the email address that should receive the notification message
 * MAILGUN_DOMAIN: domain of mailgun where the email are sent
-* MAILGUN_APY_KEY: the API token to access to mail service
+* MAILGUN_API_KEY: the API token to access to mail service
 
 Now you can run the application itself `./VaccineSlotScanner`
 

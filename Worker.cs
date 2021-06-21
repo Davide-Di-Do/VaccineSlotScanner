@@ -48,23 +48,22 @@ namespace vaccine_slot_scanner
                         "400"
                     );
                 }
-
-                _logger.LogInformation($"Found {agendaResponse.Total} free slots");
                 if (agendaResponse.Total != 0)
                 {
                     _logger.LogWarning("Wow I've found some free slot! Sending an email to warn");
-                    // send email
+                    _logger.LogInformation($"Sending email to {Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT")}");
+                    await _mailgunClient.SendEmail(
+                        new MailgunRequest()
+                        {
+                            From = "vaccine-slot-scanner@tetracube.red",
+                            Subject = "Found a free slot",
+                            Text = "We found a free slot for {}",
+                            To = Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT")
+                        }
+                    );
                 }
-                _logger.LogInformation($"Sending email to {Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT")}");
-                await _mailgunClient.SendEmail(
-                    new MailgunRequest()
-                    {
-                        From = "vaccine-slot-scanner@tetracube.red",
-                        Subject = "Found a free slot",
-                        Text = "We found a free slot for {}",
-                        To = Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT")
-                    }
-                );
+              
+                _logger.LogInformation($"Found {agendaResponse.Total} free slots");
                 await Task.Delay(5000, stoppingToken);
             }
         }
