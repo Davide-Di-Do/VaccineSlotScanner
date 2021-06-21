@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -52,12 +53,13 @@ namespace vaccine_slot_scanner
                 {
                     _logger.LogWarning("Wow I've found some free slot! Sending an email to warn");
                     _logger.LogInformation($"Sending email to {Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT")}");
+                    var availableSlotsJoin = string.Join(";", agendaResponse.Availabilities.Select(a => a.Date));
                     await _mailgunClient.SendEmail(
                         new MailgunRequest()
                         {
                             From = "vaccine-slot-scanner@tetracube.red",
                             Subject = "Found a free slot",
-                            Text = "We found a free slot for {}",
+                            Text = $"We found a free slot for these dates: {availableSlotsJoin}",
                             To = Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT")
                         }
                     );
