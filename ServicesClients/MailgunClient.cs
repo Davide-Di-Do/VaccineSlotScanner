@@ -36,7 +36,8 @@ namespace vaccine_slot_scanner.ServicesClients
                         {new StringContent(mailgunRequest.From), "from"},
                         {new StringContent(mailgunRequest.To), "to"},
                         {new StringContent(mailgunRequest.Subject), "subject"},
-                        {new StringContent(mailgunRequest.Text), "text"}
+                        {new StringContent(mailgunRequest.Text), "text"},
+                        {new StringContent(mailgunRequest.Html), "html"}
                     };
 
                     var resultUrl = $"https://api.eu.mailgun.net/v3/{Environment.GetEnvironmentVariable("MAILGUN_DOMAIN")}/messages";
