@@ -76,6 +76,10 @@ namespace vaccine_slot_scanner
                         _logger.LogInformation("Already notified, skipping");
                     }
                 }
+                else
+                {
+                    LastNotified = null;
+                }
               
                 _logger.LogInformation($"Found {agendaResponse.Total} free slots");
                 await Task.Delay(5000, stoppingToken);
