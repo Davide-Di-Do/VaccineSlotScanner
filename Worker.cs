@@ -26,63 +26,54 @@ namespace vaccine_slot_scanner
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            if (stoppingToken.IsCancellationRequested) {
+            if (stoppingToken.IsCancellationRequested)
+            {
                 _logger.LogInformation("Cancelled");
             }
             while (!stoppingToken.IsCancellationRequested)
             {
                 _logger.LogInformation("Running request to agenda at: {time}", DateTimeOffset.Now);
                 var agendaResponse = await _agendaClient.GetAgendaSlots(
-                    DateTime.UtcNow.ToString("yyyy-MM-dd"),
-                    "2864680",
-                    "476384",
-                    "public",
-                    "25230",
-                    "400"
+                    DateTime.UtcNow,
+                    417
                 );
-                if (agendaResponse.NextSlot != null)
+                var noOfSlots = agendaResponse.Count();
+
+                _logger.LogInformation($"Found {noOfSlots} slots");
+                foreach (var item in agendaResponse)
                 {
-                    agendaResponse = await _agendaClient.GetAgendaSlots(
-                        agendaResponse.NextSlot,
-                        "2864680",
-                        "476384",
-                        "public",
-                        "25230",
-                        "400"
-                    );
-                }
-                if (agendaResponse.Total != 0)
-                {
-                    _logger.LogWarning("Wow I've found some free slot! Sending an email to warn");
-                    _logger.LogInformation($"Sending email to {Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT")}");
-                    var availableSlotsJoin = string.Join(";", agendaResponse.Availabilities.SelectMany(a => a.Slots.Select(s => s)));
-                    if (LastNotified != availableSlotsJoin)
+                    _logger.LogInformation($"\tSlot id {item.Id} have these terms");
+
+                    foreach (var term in item.Terms)
                     {
-                        _logger.LogInformation("Not notified yet, send new email");
-                        await _mailgunClient.SendEmail(
-                            new MailgunRequest()
-                            {
-                                From = "vaccine-slot-scanner@tetracube.red",
-                                Subject = "Found a free slot",
-                                Text = $"We found a free slot for these dates: {availableSlotsJoin}",
-                                To = Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT"),
-                                Html = $"We found some free slots for these dates: {availableSlotsJoin}.  <a href=\"https://www.doctolib.de/gemeinschaftspraxis/muenchen/fuchs-hierl?speciality_id=5593&practitioner_id=any\">Click here</a> go to the page "
-                            }
-                        );
-                        LastNotified = availableSlotsJoin;
-                    }
-                    else
-                    {
-                        _logger.LogInformation("Already notified, skipping");
+                        _logger.LogInformation($"\t\tTerm id {term.Id} is in state {term.State}");
+
+                        if (item.Terms.Count() > 1)
+                        {
+                            var availableSlotsJoin = string.Join("; ", item.Terms.Select(a => a.StartDate));
+                            var statusesJoin = string.Join("; ", item.Terms.Select(a => a.State));
+                            var fromDate = term.StartDate;
+                            var toDate = term.EndDate;
+                            var url = $"https://m-baedershop.swm.de/course/417/{fromDate}/{toDate}";
+
+                            _logger.LogInformation($"There are more available slots! Should send email");
+                            await _mailgunClient.SendEmail(
+                                new MailgunRequest()
+                                {
+                                    From = "kurs@tetracube.red",
+                                    Subject = "Found a free slots!",
+                                    Text = $"We found a free slots {item.Terms.Count()} for these dates: {availableSlotsJoin} with statuses {statusesJoin}",
+                                    To = Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT"),
+                                    Html = $"We found a free slots {item.Terms.Count()} for these dates: {availableSlotsJoin} with statuses {statusesJoin}. <a href=\"{url}\">Click here</a> go to the page "
+                                }
+                            );
+                        }
+
                     }
                 }
-                else
-                {
-                    LastNotified = null;
-                }
-              
-                _logger.LogInformation($"Found {agendaResponse.Total} free slots");
-                await Task.Delay(5000, stoppingToken);
+
+
+                await Task.Delay(60000*60, stoppingToken);
             }
         }
     }
