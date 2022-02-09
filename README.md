@@ -11,17 +11,30 @@ The application needs some environment variables to run properly:
 
 Now you can run the application itself `./VaccineSlotScanner`
 
-The project will run by printing logs every 5 seconds searching for empty slot; when the slot will be found an email 
-will be sent to the proper environment variable set before executing.
+The project will run by printing logs every 1 hour searching for empty slots; when a slot is found,
+the program will send an email to the recipient set in the environment variable.
 
-## Getting the app to run on the Pi. [Taken from official ASP.Net Core documentation]
-
-* Install Linux on your Pi.
-* Install the platform dependencies from your distro's package manager for .NET Core. .NET Core depends on some packages from the Linux package manager as prerequisites to running your application.
-
-For Raspbian Debian 9 Jessie you need to do the following:
+## Getting started to scan. [Taken from official ASP.Net Core documentation]
+Before installing the framework you need to add some dependencies:
 ```
 sudo apt-get update
 sudo apt-get install curl libunwind8 gettext apt-transport-https
 ```
-Copy your app, i.e. whole publish directory mentioned above, to the Raspberry Pi and execute run ./helloworld to see Hello World! from .NET Core running on your Pi! (make sure you chmod 755 ./helloworld)
+
+The worker is based on the latest version of the framework .Net Core 6.0 
+you can download the pre-compiled package for RaspberryPi on this link:
+https://download.visualstudio.microsoft.com/download/pr/a7e77f1a-db9d-403f-a611-f925cea0e6f3/af5baacfa05d023671f08bf14f98bcb2/aspnetcore-runtime-6.0.2-linux-arm.tar.gz
+
+Then extract the archive where you prefer on your system, so export environment variables
+to allow your system to recognize the where the stack is installed:
+```
+export DOTNET_ROOT=[root_folder_where_archive_was_extracted]
+export PATH=$PATH:[root_folder_where_archive_was_extracted]
+```
+
+To ensure that the stack is deployed as expected run the command `dotnet --version` and double
+check that the output matches with the version 6.x.x.
+
+Extract downloaded archive from github and extract anywhere on your system, change permission to the 
+executable if necessary (should have 755 permission level). 
+Now you are redy to run the scanner with the command `./VaccineSlotScanner`
