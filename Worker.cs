@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +15,8 @@ namespace vaccine_slot_scanner
         private readonly ILogger<Worker> _logger;
         private readonly AgendaClient _agendaClient;
         private readonly MailgunClient _mailgunClient;
+
+        private static readonly List<long> _notifiedSlots = new List<long>();
 
         private static string LastNotified { get; set; }
 
@@ -48,7 +51,7 @@ namespace vaccine_slot_scanner
                     {
                         _logger.LogInformation($"\t\tTerm id {term.Id} is in state {term.State}");
 
-                        if (item.Terms.Count() > 1)
+                        if (item.Terms.Count() > 0 && term.State != "FULLY_BOOKED" && !_notifiedSlots.Contains(term.Id))
                         {
                             var availableSlotsJoin = string.Join("; ", item.Terms.Select(a => a.StartDate));
                             var statusesJoin = string.Join("; ", item.Terms.Select(a => a.State));
@@ -57,23 +60,32 @@ namespace vaccine_slot_scanner
                             var url = $"https://m-baedershop.swm.de/course/417/{fromDate}/{toDate}";
 
                             _logger.LogInformation($"There are more available slots! Should send email");
-                            await _mailgunClient.SendEmail(
-                                new MailgunRequest()
-                                {
-                                    From = "kurs@tetracube.red",
-                                    Subject = "Found a free slots!",
-                                    Text = $"We found a free slots {item.Terms.Count()} for these dates: {availableSlotsJoin} with statuses {statusesJoin}",
-                                    To = Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT"),
-                                    Html = $"We found a free slots {item.Terms.Count()} for these dates: {availableSlotsJoin} with statuses {statusesJoin}. <a href=\"{url}\">Click here</a> go to the page "
-                                }
-                            );
+                            try
+                            {
+                                await _mailgunClient.SendEmail(
+                                    new MailgunRequest()
+                                    {
+                                        From = "kurs@tetracube.red",
+                                        Subject = "Found a free slots!",
+                                        Text = $"We found a free slots {item.Terms.Count()} for these dates: {availableSlotsJoin} with statuses {statusesJoin}",
+                                        To = Environment.GetEnvironmentVariable("NOTIFICATION_RECIPIENT"),
+                                        Html = $"We found a free slots {item.Terms.Count()} for these dates: {availableSlotsJoin} with statuses {statusesJoin}. <a href=\"{url}\">Click here</a> go to the page "
+                                    }
+                                );
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogInformation($"Cannot send email due error: ${ex.Message}");
+                            }
+                            _notifiedSlots.Add(term.Id);
+
                         }
 
                     }
                 }
 
 
-                await Task.Delay(60000*60, stoppingToken);
+                await Task.Delay(60000 * 60, stoppingToken);
             }
         }
     }
